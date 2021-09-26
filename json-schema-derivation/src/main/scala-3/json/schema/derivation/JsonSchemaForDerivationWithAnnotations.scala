@@ -9,9 +9,26 @@ import scala.quoted._
   */
 private object JsonSchemaForDerivationWithAnnotations {
 
-  def withAnnotations[T](jsonSchemaFor: Expr[JsonSchemaFor[T]])(using Quotes): Expr[JsonSchemaFor[T]] = {
+  def withAnnotations[T: Type](jsonSchemaFor: Expr[JsonSchemaFor[T]])(using Quotes): Expr[JsonSchemaFor[T]] = {
+    import quotes.reflect._
+    jsonSchemaFor
+    /*
+     *val T: TypeRepr = TypeRepr.of[T]
+     *  //.asTerm
+     *  .typeSymbol
+     *  .annotations
+     */
     jsonSchemaFor
   }
+
+  /*
+  def getAnnotationsOnExpr[T](expr: Expr[T])(using Quotes): List[Term] = {
+    import quotes.reflect._
+    expr.asTerm
+      .symbol
+      .annotations
+  }
+  */
   // Macro variant
   /*
    *def withAnnotations[T: Type](jsonSchemaFor: Expr[JsonSchemaFor[T]])(using Quotes): Expr[JsonSchemaFor[T]] = {

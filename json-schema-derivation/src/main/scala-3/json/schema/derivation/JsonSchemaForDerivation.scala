@@ -65,7 +65,7 @@ private object JsonSchemaForDerivation {
     inline erasedValue[T] match {
       case _: EmptyTuple => Nil
       case _: (head *: tail) => 
-        val headJsonSchemaFor = summonInline[JsonSchemaFor[head]]
+        val headJsonSchemaFor = withAnnotations(summonInline[JsonSchemaFor[head]])
         val tailJsonSchemaFors = getProductElementJsonSchemaFors[tail]
         headJsonSchemaFor :: tailJsonSchemaFors
     }
@@ -73,14 +73,5 @@ private object JsonSchemaForDerivation {
 
   inline def withAnnotations[T](jsonSchemaFor: JsonSchemaFor[T]): JsonSchemaFor[T] =
     ${ JsonSchemaForDerivationWithAnnotations.withAnnotations('jsonSchemaFor) }
-
-  /*
-   *inline def summonAll[T <: Tuple]: List[JsonSchemaFor[_]] =
-   *  inline erasedValue[T] match
-   *    case _: EmptyTuple => Nil
-   *    case _: (t *: ts) => summonInline[Eq[t]] :: summonAll[ts]  private def summonAll
-   */
-
-  //inline def derive[T]: JsonSchemaFor[T] = ${ JsonSchemaGenerationMacro.jsonSchemaFor[T] }
 
 }

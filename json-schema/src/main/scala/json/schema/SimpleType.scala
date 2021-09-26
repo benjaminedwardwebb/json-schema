@@ -10,5 +10,3 @@ case object SimpleType {
   case object Object extends SimpleType
   case object String extends SimpleType
 }
-
-
