@@ -1,83 +1,58 @@
 package json.schema.derivation
 
-import scala.Product
 import json.schema._
+import json.schema.derivation.annotations._
+import scala.Product
+import scala.annotation.Annotation
 import scala.quoted._
 
-/** Essentially, this macro is a function from Scala's type system to JSON
-  * schema's type system.
+/** Inspects Scala annotations on a type T and applies them as keywords to the 
+  * type's JSON schema.
+  *
+  * Unfortunately, based on my limited understanding of Scala 3
+  * metaprogramming, we cannot inspect annotations without using reflection.
+  * Since this aspect of {{{JsonSchemaFor}}} derivation is implemented by a
+  * separate Scala language feature (not type class deriviation, but
+  * reflection), we house it in a separate module.
+  *
+  * @see [[https://dotty.epfl.ch/docs/reference/metaprogramming/reflection.html]]
   */
 private object JsonSchemaForDerivationWithAnnotations {
 
-  def withAnnotations[T: Type](jsonSchemaFor: Expr[JsonSchemaFor[T]])(using Quotes): Expr[JsonSchemaFor[T]] = {
-    import quotes.reflect._
-    jsonSchemaFor
-    /*
-     *val T: TypeRepr = TypeRepr.of[T]
-     *  //.asTerm
-     *  .typeSymbol
-     *  .annotations
-     */
-    jsonSchemaFor
+  def applyAnnotations[T](jsonSchemaFor: JsonSchemaFor[T], annotations: Seq[Annotation]): JsonSchemaFor[T] = {
+    annotations.foldLeft(jsonSchemaFor)((jsonSchemaFor, annotation) => applyAnnotation(jsonSchemaFor, annotation))
   }
 
-  /*
-  def getAnnotationsOnExpr[T](expr: Expr[T])(using Quotes): List[Term] = {
-    import quotes.reflect._
-    expr.asTerm
-      .symbol
-      .annotations
+  def applyAnnotation[T](jsonSchemaFor: JsonSchemaFor[T], annotation: Annotation): JsonSchemaFor[T] = {
+    annotation match {
+      case Maximum(value) => applyMaximumAnnotation(jsonSchemaFor, value)
+      case Comment(value) => applyCommentAnnotation(jsonSchemaFor, value)
+      case Description(value) => jsonSchemaFor.mutateObject(_.copy(description = Some(value)))
+      case Title(value) => jsonSchemaFor.mutateObject(_.copy(title = Some(value)))
+      case _ => jsonSchemaFor
+    }
   }
-  */
-  // Macro variant
-  /*
-   *def withAnnotations[T: Type](jsonSchemaFor: Expr[JsonSchemaFor[T]])(using Quotes): Expr[JsonSchemaFor[T]] = {
-   *  ???
-   *}
-   */
 
-/*
- *  def jsonSchemaFor[T: Type](using Quotes): Expr[JsonSchema] = {
- *    import quotes.reflect._
- *
- *    val T: TypeRepr = TypeRepr.of[T]
- *    val Nothing: TypeRepr = TypeRepr.of[Nothing]
- *    val Unit: TypeRepr = TypeRepr.of[Unit]
- *    val Boolean: TypeRepr = TypeRepr.of[Boolean]
- *    val Int: TypeRepr = TypeRepr.of[Int]
- *    val Product: TypeRepr = TypeRepr.of[Product]
- *    val Any: TypeRepr = TypeRepr.of[Any]
- *
- *    T match {
- *      case T if T <:< Nothing => jsonSchemaForNothing
- *      case T if T <:< Unit => ???
- *      case T if T <:< Boolean => jsonSchemaForBoolean
- *      case T if T <:< Product => jsonSchemaForProduct
- *      case T if T =:= Any => jsonSchemaForAny
- *      case _ => throw new RuntimeException("Could not match type")
- *    }
- *  }
- *
- *  def jsonSchemaForNothing: Expr[JsonSchema] = ???
- *
- *  def jsonSchemaForBoolean(using Quotes): Expr[JsonSchema] = {
- *    import quotes.reflect._
- *    '{ JsonSchemaObject.EmptySchema.copy(`type` = Some(Left(SimpleType.Boolean))) }
- *  }
- *
- *  def jsonSchemaForProduct: Expr[JsonSchema] = ???
- *
- *  given ToExpr[JsonSchemaBoolean] with {
- *    def apply(x: JsonSchemaBoolean)(using Quotes) = x match {
- *      case JsonSchemaBoolean.True => '{JsonSchemaBoolean.True}
- *      case JsonSchemaBoolean.False => '{JsonSchemaBoolean.False}
- *    }
- *  }
- *
- *  def jsonSchemaForAny(using Quotes): Expr[JsonSchema] = {
- *    import quotes.reflect._
- *    Expr[JsonSchemaBoolean](JsonSchemaBoolean.True)
- *  }
- */
+  def applyMaximumAnnotation[T](jsonSchemaFor: JsonSchemaFor[T], value: Double): JsonSchemaFor[T] = {
+    jsonSchemaFor.mutateObject(_.copy(maximum = Some(value)))
+  }
+
+  def applyCommentAnnotation[T](jsonSchemaFor: JsonSchemaFor[T], value: String): JsonSchemaFor[T] = {
+    jsonSchemaFor.mutateObject(_.copy(`$comment` = Some(value)))
+  }
+
+  extension [T](jsonSchemaFor: JsonSchemaFor[T])
+    def mutate(function: JsonSchema => JsonSchema): JsonSchemaFor[T] = 
+      new JsonSchemaFor[T] {
+        def jsonSchema: JsonSchema = function(jsonSchemaFor.jsonSchema)
+      }
+
+    def mutateObject(function: JsonSchemaObject => JsonSchemaObject): JsonSchemaFor[T] = {
+      val f = (jsonSchema: JsonSchema) => jsonSchema match {
+        case o: JsonSchemaObject => function(o)
+        case _ => jsonSchema
+      }
+      jsonSchemaFor.mutate(f)
+    }
 
 }

@@ -3,9 +3,13 @@ package json.schema.derivation
 import scala.deriving.Mirror
 import json.schema._
 
-/** Essentially, json schema derivation maps a Scala type to a corresponding
-  * JSON schema that has the same semantics. This is done using Scala 3
-  * macros.
+/** Derives a {{{JsonSchemaFor}}} for a given type {{{T}}}, provided the type
+  * meets Scala 3's conditions for type class derivation, i.e., is essentially
+  * an ADT composed of sealed traits, case classes, enums.
+  *
+  * @see [[https://docs.scala-lang.org/scala3/reference/contextual/derivation.html]]
+  * @see [[https://dotty.epfl.ch/docs/reference/contextual/derivation.html]]
+  * @see [[https://blog.philipp-martini.de/blog/magic-mirror-scala3/]]
   */
 private object JsonSchemaForDerivation {
 
@@ -29,7 +33,8 @@ private object JsonSchemaForDerivation {
           .copy(properties = jsonSchemaProperties)
       }
     }
-    withAnnotations(jsonSchemaForProductWithoutAnnotations)
+
+    jsonSchemaForProductWithoutAnnotations
   }
 
   inline def getProductJsonSchemaProperties[T](
@@ -65,13 +70,10 @@ private object JsonSchemaForDerivation {
     inline erasedValue[T] match {
       case _: EmptyTuple => Nil
       case _: (head *: tail) => 
-        val headJsonSchemaFor = withAnnotations(summonInline[JsonSchemaFor[head]])
+        val headJsonSchemaFor = summonInline[JsonSchemaFor[head]]
         val tailJsonSchemaFors = getProductElementJsonSchemaFors[tail]
         headJsonSchemaFor :: tailJsonSchemaFors
     }
   }
-
-  inline def withAnnotations[T](jsonSchemaFor: JsonSchemaFor[T]): JsonSchemaFor[T] =
-    ${ JsonSchemaForDerivationWithAnnotations.withAnnotations('jsonSchemaFor) }
 
 }
