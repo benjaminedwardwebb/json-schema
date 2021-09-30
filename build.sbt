@@ -3,7 +3,7 @@ ThisBuild / organization := "json-schema"
 ThisBuild / organizationName := "just playing around"
 ThisBuild / versionScheme := Some("early-semver")
 
-val supportedScalaVersions = Seq("2.12.13", "2.13.5", "3.0.0")
+val supportedScalaVersions = Seq("2.12.13", "2.13.5", "3.0.2")
 
 lazy val root = (project in file("."))
   .aggregate(`json-schema`)
