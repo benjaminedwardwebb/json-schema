@@ -8,17 +8,6 @@ trait JsonSchemaFor[T] {
 }
 
 object JsonSchemaFor {
-
   inline given derived[T]: JsonSchemaFor[T] =
     ${ JsonSchemaForDerivationMacro.deriveMacro[T] }
-
-  /*
-   *given derived[T: Type](using Quotes): Expr[Eq[T]] =
-   *  ${ JsonSchemaForDerivation.deriveM[T] }
-   */
-
-  /*
-   *import scala.deriving.Mirror
-   *inline given derived[T](using Mirror.Of[T]): JsonSchemaFor[T] = JsonSchemaForDerivation.derive[T]
-   */
 }

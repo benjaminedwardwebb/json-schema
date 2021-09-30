@@ -71,7 +71,8 @@ class JsonSchemaForDerivationSpec extends AnyFlatSpec {
 
     //val x = JsonSchemaForDerivationMacro.get[CaseClass]
     val jsonSchema = summon[JsonSchemaFor[CaseClass]].jsonSchema
-    println(jsonSchema)
+    //println("test: " + x)
+    println("json schema: " + jsonSchema)
 
     /*
      *val jsonSchema = summon[JsonSchemaFor[CaseClass]].jsonSchema
