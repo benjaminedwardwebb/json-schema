@@ -1,8 +1,9 @@
 package json.schema
 
 import json.Json
+import scala.util.matching.Regex
 
-/** A JSON schema document, or simply a JSON schema.
+/** A JSON schema document, or simply, a JSON schema.
   *
   * Implemented as a sum type of boolean and object JSON schemas.
   *
@@ -24,7 +25,7 @@ object JsonSchemaBoolean {
   case object False extends JsonSchemaBoolean
 }
 
-/** An JSON schema document that is, itself, an object.
+/** A JSON schema document that is, itself, an object.
   *
   * Object JSON schemas are the typical kind of JSON schema. The object's
   * properties are schema keywords, and they define how a schema validates
@@ -56,6 +57,7 @@ object JsonSchemaBoolean {
   * Core Vocabulary
   * @see [[https://json-schema.org/draft/2020-12/meta/core this link downloads the Core Vocabulary meta-schema]]
   * @param $id 
+  * TODO
   * @param $vocabulary
   * @param $comment
   * @param $defs
@@ -105,8 +107,13 @@ object JsonSchemaBoolean {
   */
 case class JsonSchemaObject(
   // core vocabulary
-  `$id`: Option[String], 
-  `$vocabulary`: Option[Map[String, Boolean]], // TODO special format required for keys
+  `$id`: Option[String],  // TODO has uri-reference format and specific pattern regex "^[^#]*#?$"
+  `$schema`: Option[String], // TODO has uri format
+  `$ref`: Option[String], // TODO has uri-reference format
+  `$anchor`: Option[String], // TODO has regex pattern "^[A-Za-z_][-A-Za-z0-9._]*$"
+  `$dynamicRef`: Option[String], // TODO has uri-reference format
+  `$dynamicAnchor`: Option[String], // TODO has regex pattern as anchor
+  `$vocabulary`: Option[Map[String, Boolean]], // TODO uri format required for keys
   `$comment`: Option[String],
   `$defs`: Option[Map[String, JsonSchema]],
 
@@ -116,7 +123,7 @@ case class JsonSchemaObject(
   contains: Option[JsonSchema],
   additionalProperties: Option[JsonSchema], // TODO check the defiinition of this keyword
   properties: Option[Map[String, JsonSchema]], // TODO
-  patternProperties: Option[Map[String, JsonSchema]], // TODO String should be Regex format
+  patternProperties: Option[Map[Regex, JsonSchema]], // TODO String should be Regex format
   dependentSchema: Option[Map[String, JsonSchema]], // TODO the default is an empty object, `{}`, as per applicator meta-schema
   propertyNames: Option[JsonSchema],
   `if`: Option[JsonSchema],
@@ -149,6 +156,15 @@ case class JsonSchemaObject(
   required: Option[Set[String]], // TODO unique items, default empty
   dependentRequired: Option[Map[String, Seq[String]]], // TODO unique items, default empty (on values)
 
+  // unevaluated vocabulary
+  // TODO
+
+  // format annotation vocabulary
+  format: Option[String],
+
+  // content vocabulary
+  // TODO
+
   // meta-data vocabulary
   title: Option[String],
   description: Option[String],
@@ -165,6 +181,11 @@ case class JsonSchemaObject(
 object JsonSchemaObject {
   val EmptySchema = JsonSchemaObject(
     `$id` = None,
+    `$schema` = None,
+    `$ref` = None,
+    `$anchor` = None,
+    `$dynamicRef` = None,
+    `$dynamicAnchor` = None,
     `$vocabulary` = None,
     `$comment` = None,
     `$defs` = None,
@@ -203,6 +224,7 @@ object JsonSchemaObject {
     minProperties = None,
     required = None,
     dependentRequired = None,
+    format = None,
     title = None,
     description = None,
     default = None,
