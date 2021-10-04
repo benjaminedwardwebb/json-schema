@@ -9,15 +9,16 @@ lazy val root = (project in file("."))
   .aggregate(`json-schema`)
   .aggregate(`json-schema-derivation`)
   .aggregate(`json-schema-compatibility`)
+  .aggregate(`json-schema-serialization-circe`)
   .settings(crossScalaVersions := Nil)
   .settings(publish / skip := true)
 
 val commonSettings = Seq(
   crossScalaVersions := supportedScalaVersions,
   libraryDependencies ++= Seq(
-    "org.scalatest" %% "scalatest" % "3.2.9" % Test,
-    "org.scalatest" %% "scalatest-flatspec" % "3.2.9" % Test,
-    "org.scalatestplus" %% "scalacheck-1-15" % "3.2.9.0" % Test
+    Dependencies.scalatest % Test,
+    Dependencies.scalatestFlatspec % Test,
+    Dependencies.scalatestplusScalacheck % Test
   )
 )
 
@@ -30,6 +31,14 @@ val `json-schema-derivation` = project
 
 val `json-schema-compatibility` = project
   .settings(commonSettings)
+  .dependsOn(`json-schema`)
+
+val `json-schema-serialization-circe` = project
+  .settings(commonSettings)
+  .settings(libraryDependencies ++= Seq(
+    Dependencies.circeCore,
+    Dependencies.circeGeneric
+  ))
   .dependsOn(`json-schema`)
 
 // Reloads the SBT build when source changes in this file are detected.
